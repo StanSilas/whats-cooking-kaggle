@@ -47,6 +47,8 @@ label_names = lbl.classes_
 from keras.utils import np_utils
 y_train = np_utils.to_categorical(y_train,len(label_names))
 
+dims = len(feature_names)
+nb_classes = len(label_names)
 
 
 from keras.models import Sequential
@@ -54,22 +56,28 @@ from keras.layers.core import Dense, Dropout, Activation
 from keras.optimizers import SGD
 
 model = Sequential()
-model.add(Dense(len(feature_names), 64, init='uniform'))
-model.add(Activation('tanh'))
+model.add(Dense(dims, 512, init='glorot_uniform'))
+model.add(PReLU((512,)))
+model.add(BatchNormalization((512,)))
 model.add(Dropout(0.5))
-model.add(Dense(64, 64, init='uniform'))
-model.add(Activation('tanh'))
+
+model.add(Dense(512, 512, init='glorot_uniform'))
+model.add(PReLU((512,)))
+model.add(BatchNormalization((512,)))
 model.add(Dropout(0.5))
-model.add(Dense(64, len(label_names), init='uniform'))
+
+model.add(Dense(512, 512, init='glorot_uniform'))
+model.add(PReLU((512,)))
+model.add(BatchNormalization((512,)))
+model.add(Dropout(0.5))
+
+model.add(Dense(512, nb_classes, init='glorot_uniform'))
 model.add(Activation('softmax'))
 
-sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='mean_squared_error', optimizer=sgd)
+model.compile(loss='categorical_crossentropy', optimizer="adam")
 
 
 model.fit(X_train, y_train, nb_epoch=20, batch_size=16)
-
-
 
 def make_submission(y_pred, ids, encoder, fname):
     with open(fname, 'w') as f:
@@ -81,4 +89,4 @@ def make_submission(y_pred, ids, encoder, fname):
     print("Wrote submission to file {}.".format(fname))
 
 pred = model.predict_classes(X_test.toarray())
-make_submission(proba, test_ids, lbl, fname='data/keras-submit.csv')
+make_submission(proba, test_ids, lbl, fname='data/keras-submit-2.csv')
